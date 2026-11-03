@@ -13,10 +13,12 @@ RUN set -eux; \
     printf '<Directory /data/wordpress/>\n\tOptions FollowSymLinks\n\tAllowOverride All\n\tRequire all granted\n</Directory>\n' \
         > /etc/apache2/conf-available/oceanlaunch.conf; \
     a2enconf oceanlaunch; \
+    sed -i 's/^ServerTokens .*/ServerTokens Prod/; s/^ServerSignature .*/ServerSignature Off/' /etc/apache2/conf-available/security.conf; \
+    grep -q '^ServerTokens Prod' /etc/apache2/conf-available/security.conf; \
     sed -i '1r /usr/src/oceanlaunch-db.php' /usr/src/wordpress/wp-config-docker.php; \
     grep -q DATABASE_URL /usr/src/wordpress/wp-config-docker.php; \
     printf '%s\n' 'upload_max_filesize = 64M' 'post_max_size = 64M' 'memory_limit = 256M' 'max_execution_time = 120' \
-        'upload_tmp_dir = /var/tmp' 'sys_temp_dir = /var/tmp' > /usr/local/etc/php/conf.d/oceanlaunch.ini; \
+        'upload_tmp_dir = /var/tmp' 'sys_temp_dir = /var/tmp' 'expose_php = Off' > /usr/local/etc/php/conf.d/oceanlaunch.ini; \
     mkdir -p /data; \
     chown www-data:www-data /data
 
