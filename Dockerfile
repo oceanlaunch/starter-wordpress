@@ -2,7 +2,7 @@
 # /data/wordpress (in the app's storage at /data, so uploads, themes, plugins and updates survive deploys) and the
 # database OceanLaunch connects (DATABASE_URL). The first start copies WordPress there and writes wp-config.php with
 # fresh keys.
-FROM wordpress:7.1.4-php8.4-apache@sha256:50c808d213d038ad68fdbb8d9ecb35f8181a8670928dc669c1c4595f23b8bcf8
+FROM wordpress:7.1.4-php8.4-apache@sha256:50c808d213d038ad68fdbb8d9ecb35f8181a8670928dc669c1c4595f23b8bcf8 AS wordpress
 
 COPY oceanlaunch-db.php /usr/src/oceanlaunch-db.php
 COPY oceanlaunch-start.sh /usr/local/bin/oceanlaunch-start.sh
@@ -21,6 +21,19 @@ RUN set -eux; \
         'upload_tmp_dir = /var/tmp' 'sys_temp_dir = /var/tmp' 'expose_php = Off' > /usr/local/etc/php/conf.d/oceanlaunch.ini; \
     mkdir -p /data; \
     chown www-data:www-data /data
+# More PHP extensions or packages? Add RUN lines here, above the next FROM: the image below only copies this one.
+
+# The official image declares VOLUME /var/www/html, and OceanLaunch runs no image that declares a volume: Docker would
+# give each deploy a new one there, outside every limit. This site doesn't use that folder (it's in /data), and a
+# Dockerfile can't take a VOLUME back. So the finished files are copied into an image of their own, with the settings
+# from the official image's configuration that WordPress needs (its PATH, PHP's and Apache's folders, its stop signal).
+FROM scratch
+COPY --from=wordpress / /
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    PHP_INI_DIR=/usr/local/etc/php \
+    APACHE_CONFDIR=/etc/apache2 \
+    APACHE_ENVVARS=/etc/apache2/envvars
+STOPSIGNAL SIGWINCH
 
 # Any WORDPRESS_ variable makes the first start write wp-config.php (from wp-config-docker.php, with the lines above).
 ENV WORDPRESS_DB_CHARSET=utf8mb4
