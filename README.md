@@ -12,7 +12,9 @@ When it's live, open its address and follow WordPress's five-minute setup (site 
 ## What's in it
 
 - `Dockerfile`: the official image (pinned), run as its unprivileged user on port 8080 with the site in
-  `/data/wordpress`; uploads up to 64 MB.
+  `/data/wordpress`; uploads up to 64 MB. Its files are copied into a fresh image, which leaves behind the official
+  image's `VOLUME /var/www/html`: OceanLaunch runs no image that declares a volume. Add PHP extensions or packages
+  in the first stage, above `FROM scratch`.
 - `oceanlaunch-db.php`: added to WordPress's `wp-config.php`, it reads the connected database from `DATABASE_URL`.
 - `oceanlaunch-start.sh`: makes `/data/wordpress` (as WordPress's user) and starts WordPress there.
 
